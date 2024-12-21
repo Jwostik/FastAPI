@@ -41,7 +41,7 @@ async def database():
     with conn.cursor() as curs:
         curs.execute("select row_to_json(row) from (select * from man) row")
         rows = curs.fetchall()
-        return rows
+        return json.dumps(rows)
 
 @app.get('/')
 def main(payload):
