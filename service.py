@@ -39,7 +39,7 @@ async def healthcheck():
 async def database():
     conn = psycopg2.connect(dbname='tester', user='postgres', password='postgres')
     with conn.cursor() as curs:
-        curs.execute("select * from man")
+        curs.execute("select row_to_json(row) from (select * from man) row")
         rows = curs.fetchall()
         return rows
 
