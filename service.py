@@ -4,6 +4,7 @@ import logging
 from starlette.background import BackgroundTask
 from logging import handlers
 import psycopg2, json
+from psycopg2.extras import RealDictCursor
 
 
 app = FastAPI()
@@ -38,8 +39,8 @@ async def healthcheck():
 @app.get("/database")
 async def database():
     conn = psycopg2.connect(dbname='tester', user='postgres', password='postgres')
-    with conn.cursor() as curs:
-        curs.execute("select row_to_json(row) from (select * from man) row")
+    with conn.cursor(cursor_factory=RealDictCursor) as curs:
+        curs.execute("select * from man")
         rows = curs.fetchall()
         return json.dumps(rows)
 
