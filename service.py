@@ -42,7 +42,7 @@ async def database():
     with conn.cursor(cursor_factory=RealDictCursor) as curs:
         curs.execute("select * from man")
         rows = curs.fetchall()
-        return json.dumps(rows)
+        return rows
 
 @app.get('/')
 def main(payload):
