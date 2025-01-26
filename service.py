@@ -33,6 +33,7 @@ async def users(data: User):
         curs.execute("select count(*) from credentials where login=" + data.login)
         count = curs.fetch()
         print(count)
+        print(1)
 #    if data.name == 2:
 #        raise HTTPException(status_code=409, detail="Login has already used")
     return data
