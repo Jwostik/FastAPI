@@ -30,7 +30,7 @@ async def database():
 async def users(data: User):
     conn = psycopg2.connect(dbname='tester', user='postgres', password='postgres')
     with conn.cursor(cursor_factory=RealDictCursor) as curs:
-        curs.execute("select count(*) from credentials where login=" + data.login)
+        curs.execute("select count(*) from credentials where login = %s", data.login)
         count = curs.fetch()
         print(count)
 #    if data.name == 2:
