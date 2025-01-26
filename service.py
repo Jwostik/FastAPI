@@ -30,14 +30,14 @@ async def database():
 async def users(data: User):
     conn = psycopg2.connect(dbname='tester', user='postgres', password='postgres')
     with conn.cursor() as curs:
-        curs.execute("select count(*) from credentials where login = %s", data.login)
+        curs.execute("select count(*) from credentials where login = %s", [data.login])
         count = curs.fetchone()
         if count[0] > 0:
             raise HTTPException(status_code=409, detail="Login has already used")
         salt = os.urandom(32)
         hash = hashlib.pbkdf2_hmac('sha256', data.password.encode('utf-8'), salt, 100000)
         curs.execute("insert into credentials (login, password_hash, salt) values (%s, %s, %s)", [data.login, str(hash), str(salt)])
-        curs.execute("select account_id from credentials where login = %s", data.login)
+        curs.execute("select account_id from credentials where login = %s", [data.login])
         account_id = curs.fetchone()
         conn.commit()
         return account_id[0]
