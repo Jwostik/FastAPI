@@ -1,5 +1,5 @@
 from fastapi import FastAPI, HTTPException
-import psycopg2, uvicorn
+import psycopg2, uvicorn, os, hashlib
 from psycopg2.extras import RealDictCursor
 from pydantic import BaseModel
 
@@ -29,13 +29,18 @@ async def database():
 @app.post("/users")
 async def users(data: User):
     conn = psycopg2.connect(dbname='tester', user='postgres', password='postgres')
-    with conn.cursor(cursor_factory=RealDictCursor) as curs:
+    with conn.cursor() as curs:
         curs.execute("select count(*) from credentials where login = %s", data.login)
-        count = curs.fetch()
-        print(count)
-#    if data.name == 2:
-#        raise HTTPException(status_code=409, detail="Login has already used")
-    return data
+        count = curs.fetchone()
+        if count[0] > 0:
+            raise HTTPException(status_code=409, detail="Login has already used")
+        salt = os.urandom(32)
+        hash = hashlib.pbkdf2_hmac('sha256', data.password.encode('utf-8'), salt, 100000)
+        curs.execute("insert into credentials values (%s, %s, %s)", data.login, hash, salt)
+        curs.execute("select account_id from credentials where login = %s", data.login)
+        account_id = curs.fetchone()
+    return account_id[0]
+
 
 
 if __name__ == '__main__':
