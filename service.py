@@ -40,7 +40,7 @@ async def users(data: User):
         curs.execute("select account_id from credentials where login = %s", data.login)
         account_id = curs.fetchone()
         conn.commit()
-    return account_id[0]
+        return account_id[0]
 
 
 
