@@ -12,6 +12,10 @@ class User(BaseModel):
     password: str
     description: str
 
+class Auth(BaseModel):
+    login: str
+    password: str
+
 
 @app.get("/healthcheck")
 async def healthcheck():
@@ -40,9 +44,18 @@ async def users(data: User):
         curs.execute("insert into credentials (login, password_hash, salt) values (%s, %s, %s)", [str(data.login), str(hash), str(salt)])
         curs.execute("select account_id from credentials where login = %s", [str(data.login)])
         account_id = curs.fetchone()
-        curs.execute("insert into credentials (account_id, description) values (%s, %s)", [account_id[0], str(data.description)])
+        curs.execute("insert into user_info (account_id, description) values (%s, %s)", [account_id[0], str(data.description)])
         conn.commit()
         return account_id[0]
+    
+@app.post("/auth")
+async def users(data: Auth):
+    conn = psycopg2.connect(dbname='tester', user='postgres', password='postgres')
+    with conn.cursor() as curs:
+        curs.execute("select count(*) from credentials where login = %s", [str(data.login)])
+        count = curs.fetchone()
+        if count[0] > 0:
+            raise HTTPException(status_code=401, detail="Incorrect login")
 
 
 
