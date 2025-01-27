@@ -10,6 +10,7 @@ app = FastAPI()
 class User(BaseModel):
     login: str
     password: str
+    description: str
 
 
 @app.get("/healthcheck")
@@ -39,6 +40,7 @@ async def users(data: User):
         curs.execute("insert into credentials (login, password_hash, salt) values (%s, %s, %s)", [str(data.login), str(hash), str(salt)])
         curs.execute("select account_id from credentials where login = %s", [str(data.login)])
         account_id = curs.fetchone()
+        curs.execute("insert into credentials (account_id, description) values (%s, %s)", [account_id[0], str(data.description)])
         conn.commit()
         return account_id[0]
 
