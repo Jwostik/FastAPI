@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Header
 import psycopg2, uvicorn, os, hashlib, jwt, datetime
 from pydantic import BaseModel
 
@@ -58,7 +58,7 @@ async def auth(data: Auth):
     return token
 
 @app.get("/users/{account_id}")
-async def get_user_by_account_id(token):
+async def get_user_by_account_id(token: Header):
     print(token)
     
 
