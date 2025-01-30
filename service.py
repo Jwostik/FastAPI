@@ -57,6 +57,10 @@ async def auth(data: Auth):
         token = jwt.encode(payload, key)
     return token
 
+@app.get("/users/{account_id}")
+async def get_user_by_account_id(token):
+    print(token)
+    
 
 
 if __name__ == '__main__':
