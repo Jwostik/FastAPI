@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Header
+from fastapi import FastAPI, HTTPException, Request
 import psycopg2, uvicorn, os, hashlib, jwt, datetime
 from pydantic import BaseModel
 
@@ -53,14 +53,30 @@ async def auth(data: Auth):
         hash = hashlib.pbkdf2_hmac('sha256', data.password.encode('utf-8'), salt, 100000)
         if bytes(correct_hash) != hash:
             raise HTTPException(status_code=401, detail="Incorrect password")
-        payload = {"account_id": account_id, "exp": datetime.datetime.now() + datetime.timedelta(seconds=10)}
+        payload = {"account_id": account_id, "exp": datetime.datetime.now(tz=datetime.timezone.utc) + datetime.timedelta(hours=1)}
         token = jwt.encode(payload, key)
     return token
 
 @app.get("/users/{account_id}")
-async def get_user_by_account_id(token: Header):
-    print(token)
-    
+async def get_user_by_account_id(request: Request, account_id):
+    if not account_id.isdigit():
+        raise HTTPException(status_code=401, detail="Invalid account id")
+    token = request.headers.get('x-auth-header')
+    if not token:
+        raise HTTPException(status_code=401, detail="No token")
+    try:
+        payload = jwt.decode(token, key, algorithms='HS256')
+    except jwt.DecodeError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired")
+    if payload['account_id'] != int(account_id):
+        raise HTTPException(status_code=401, detail="Invalid account")
+    conn = psycopg2.connect(dbname='tester', user='postgres', password='postgres')
+    with conn.cursor() as curs:
+        curs.execute("select description from user_info where account_id = %s", [payload['account_id']])
+        description, = curs.fetchone()
+    return description
 
 
 if __name__ == '__main__':
