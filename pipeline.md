@@ -2,7 +2,7 @@
 erDiagram
     JOBS {
         int job_id PK
-        text job_name UNIQUE "constraint length < 50"
+        text job_name "constraint UNIQUE and length < 50"
         int first_stage FK "references stages(stage_id)"
     }
     
