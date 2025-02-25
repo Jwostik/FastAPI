@@ -1,5 +1,5 @@
 Для создания pipeline отправляется HTTP POST-запрос на server.com/create_pipeline с данными в формате json следующего вида:
-'''json
+'''javascript
 {
     "pipeline_name": <имя pipeline>,
     "stages": <перечисление каждой стадии с их порядковыми номерами с описанием каждой из них в формате json>
