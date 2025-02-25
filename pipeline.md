@@ -67,10 +67,11 @@ erDiagram
                     "stage_type": "HTTP",
                     "stage_params": 
                         {
+                            "url_path": "server.com/users",
                             "data": ["login", "password"],
                             "return_value": "user_id",
                             "return_codes": [200, 400],
-                            "transfer_return_value_to_next_stage": true,
+                            "transfer_return_value_to_next_stage": true
                         }
                 },
             "2":
@@ -78,6 +79,7 @@ erDiagram
                     "stage_type": "HTTP",
                     "stage_params": 
                         {
+                            "url_path": "server.com/auth",
                             "data": "user_id",
                             "return_value": "jwt",
                             "return_codes": [200, 400]
