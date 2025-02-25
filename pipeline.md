@@ -70,7 +70,7 @@ erDiagram
                             "data": ["login", "password"],
                             "return_value": "user_id",
                             "return_codes": [200, 400],
-                            "transfer_return_value_to_next_stage": True,
+                            "transfer_return_value_to_next_stage": true,
                         }
                 },
             "2":
