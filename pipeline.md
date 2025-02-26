@@ -1,3 +1,16 @@
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant S as Service
+    participant D as Database
+    C->>S: server_com/create_pipeline
+    S->>D: insert pipeline
+    S->>D: insert stage_1
+    S->>D: ...
+    S->>D: insert stage_n
+    D->>S: Success or Error
+    S->>C: Success or Error
+```
 Для создания pipeline отправляется HTTP POST-запрос на server.com/create_pipeline с данными в формате json следующего вида:
 ```json
 {
