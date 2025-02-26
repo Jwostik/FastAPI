@@ -21,7 +21,7 @@ sequenceDiagram
     S->>D: insert job_status with stage=1 and status=in process
     D->>S: Start job_id or Error
     S->>C: Start job_id or Error on start
-    Note right of S: Execute stages
+    Note over S: Execute stages
     S->>D: update stage in job_id
     S->>D: if all stages have done set status=ended successfully<br/>else set status=ended with error
     S->>C: Successfully completed<br/> or ended with error on stage_i
