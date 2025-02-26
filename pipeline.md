@@ -1,43 +1,3 @@
-```mermaid
-sequenceDiagram
-    participant C as Client
-    participant S as Service
-    participant D as Database
-    C->>S: POST server_com/create_pipeline
-    S->>D: insert pipeline
-    S->>D: insert stage_1
-    S->>D: ...
-    S->>D: insert stage_n
-    D->>S: Success or Error
-    S->>C: Success or Error
-```
-
-```mermaid
-sequenceDiagram
-    participant C as Client
-    participant S as Service
-    participant D as Database
-    C->>S: POST server_com/start_pipeline "name: pipeline"
-    S->>D: insert job_status with stage=1 and status=in process
-    D->>S: Start job_id or Error
-    S->>C: Start job_id or Error on start
-    Note over S: Execute stages
-    S->>D: update stage in job_id
-    S->>D: if all stages have done set status=ended successfully<br/>else set status=ended with error
-    S->>C: Successfully completed<br/> or ended with error on stage_i
-```
-
-```mermaid
-sequenceDiagram
-    participant C as Client
-    participant S as Service
-    participant D as Database
-    C->>S: GET server_com/status_job?job_id=<идентификатор>
-    S->>D: get stage_index_in_pipeline where job_id=<идентификатор>
-    D->>S: stage_index_in_pipeline
-    S->>C: stage_index_in_pipeline
-```
-
 Для создания pipeline отправляется HTTP POST-запрос на server.com/create_pipeline с данными в формате json следующего вида:
 ```json
 {
@@ -55,13 +15,53 @@ sequenceDiagram
     }
 ```
 
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant S as Service
+    participant D as Database
+    C->>S: POST server_com/create_pipeline
+    S->>D: insert pipeline
+    S->>D: insert stage_1
+    S->>D: ...
+    S->>D: insert stage_n
+    D->>S: Success or Error
+    S->>C: Success or Error
+```
+
 В качестве параметров стадии могут выступать, например, параметры пути в HTTP запросе, передаваемые данные, возвращаемые значения, возможность передачи выходных параметров в следующую стадию и т.д.
 
 По итогам создания pipeline сервер возвращает сообщение об успешном создании pipeline или ошибку, возникшую при его создании.
 
 Для запуска pipeline отправляется HTTP POST-запрос на server.com/start_pipeline с заголовком вида "name: <имя pipeline>" и данными, необходимыми для работы сервиса. Сервер возвращает идентификатор начавшейся job.
 
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant S as Service
+    participant D as Database
+    C->>S: POST server_com/start_pipeline "name: pipeline"
+    S->>D: insert job_status with stage=1 and status=in process
+    D->>S: Start job_id or Error
+    S->>C: Start job_id or Error on start
+    Note over S: Execute stages
+    S->>D: update stage in job_id
+    S->>D: if all stages have done set status=ended successfully<br/>else set status=ended with error
+    S->>C: Successfully completed<br/> or ended with error on stage_i
+```
+
 Чтобы узнать текущую стадию job отправляется HTTP GET-запрос на server.com/status_job?job_id=<идентификатор>.
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant S as Service
+    participant D as Database
+    C->>S: GET server_com/status_job?job_id=<идентификатор>
+    S->>D: get stage_index_in_pipeline where job_id=<идентификатор>
+    D->>S: stage_index_in_pipeline
+    S->>C: stage_index_in_pipeline
+```
 
 Структура базы данных, обслуживающей работу с pipeline представлена ниже:
 
