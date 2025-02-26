@@ -11,6 +11,22 @@ sequenceDiagram
     D->>S: Success or Error
     S->>C: Success or Error
 ```
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant S as Service
+    participant D as Database
+    C->>S: server_com/start_pipeline "name: pipeline"
+    S->>D: insert job_status with stage=1 and status=in process
+    D->>S: Start job_id or Error
+    S->>C: Start job_id or Error on start
+    Note right of S: Execute stages
+    S->>D: update stage in job_id
+    S->>D: if all stages have done set status=ended successfully<br/>else set status=ended with error
+    S->>C: Successfully completed or ended on stage_i
+```
+
 Для создания pipeline отправляется HTTP POST-запрос на server.com/create_pipeline с данными в формате json следующего вида:
 ```json
 {
