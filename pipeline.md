@@ -29,11 +29,43 @@ sequenceDiagram
     S->>C: Success or Error
 ```
 
-В качестве параметров стадии могут выступать, например, параметры пути в HTTP запросе, передаваемые данные, возвращаемые значения, возможность передачи выходных параметров в следующую стадию и т.д.
+В качестве параметров стадии могут выступать, например, параметры пути в HTTP запросе, передаваемые данные, возвращаемые значения, возможность передачи выходных параметров в следующую стадию и т.д. Для HTTP запросов параметры представлены следующей таблицей:
+| Имя | Обязателен | Описание |
+| --- | --- | --- |
+| url_path | T | URL-адрес вызываемого сервиса |
+| method | T | Метод отправки HTTP-запроса: POST, GET и т.д. |
+| path_params | F | Параметры пути |
+| query_params | F | Массив ключей query-параметров |
+| data | F | Массив ключей данных, необходимых в запросе|
+| return_value | F | Имя возвращаемого значения |
+| transfer_return_value_to_next_stage | F | True/False - отправляется ли возвращемое значение как входной аргумент следующей стадии сервиса |
+| transfer_data_to_next_stage | F | True/False - отправляются ли исходные данные запроса как входной аргумент следующей стадии сервиса |
+| return_codes | F | Массив возможных кодов возврата|
 
 По итогам создания pipeline сервер возвращает сообщение об успешном создании pipeline или ошибку, возникшую при его создании.
 
-Для запуска pipeline отправляется HTTP POST-запрос на server.com/start_pipeline с заголовком вида "name: <имя pipeline>" и данными, необходимыми для работы сервиса. Сервер возвращает идентификатор начавшейся job.
+Для запуска pipeline отправляется HTTP POST-запрос на server.com/start_pipeline с заголовком вида "name: <имя pipeline>" и данными, необходимыми для работы сервиса, в формате json. Для HTTP pipeline это могут быть значения параметров пути, query-параметров или просто данными запроса, т.е. json следующего формата:
+```json
+"path_params":
+    {
+        "path_key1": "path_value1",
+        "path_key2": "path_value2"
+    },
+"quety_params":
+    {
+        "query_key1": "query_value1",
+        "query_key2": "query_value2"
+    },
+"data":
+    {
+        "data_key1": "data_value1",
+        "data_key2": "data_value2"
+    }
+```
+        
+
+
+Сервер возвращает идентификатор начавшейся job.
 
 ```mermaid
 sequenceDiagram
@@ -122,7 +154,7 @@ erDiagram
                     "stage_params": 
                         {
                             "url_path": "server.com/auth",
-                            "data": "user_id",
+                            "data": ["user_id"],
                             "return_value": "jwt",
                             "return_codes": [200, 400]
                         }
@@ -131,4 +163,4 @@ erDiagram
 }
 ```
 
-Для запуска данного pipeline необходимо отправить HTTP POST-запрос на server.com/start_pipeline с заголовком "name: Authorization" с данными "login: user, password: 123".
+Для запуска данного pipeline необходимо отправить HTTP POST-запрос на server.com/start_pipeline с заголовком "name: Authorization" с данными "data: {login: user, password: 123}".
