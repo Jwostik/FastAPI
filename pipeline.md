@@ -140,6 +140,7 @@ erDiagram
                     "stage_params": 
                         {
                             "url_path": "server.com/users",
+                            "method": "POST",
                             "data": ["login", "password"],
                             "return_value": "user_id",
                             "return_codes": [200, 400],
@@ -152,6 +153,7 @@ erDiagram
                     "stage_params": 
                         {
                             "url_path": "server.com/auth",
+                            "method": "POST",
                             "data": ["user_id"],
                             "return_value": "jwt",
                             "return_codes": [200, 400]
