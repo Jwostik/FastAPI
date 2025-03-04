@@ -1,0 +1,166 @@
+openapi: 3.0.3
+info:
+  title: Pipeline service
+  description: |-
+    This is a sample Pet Store Server based on the OpenAPI 3.0 specification.  You can find out more about
+    Swagger at [https://swagger.io](https://swagger.io). In the third iteration of the pet store, we've switched to the design first approach!
+    You can now help us improve the API whether it's by making changes to the definition itself or to the code.
+    That way, with time, we can improve the API in general, and expose some of the new features in OAS3.
+
+    _If you're looking for the Swagger 2.0/OAS 2.0 version of Petstore, then click [here](https://editor.swagger.io/?url=https://petstore.swagger.io/v2/swagger.yaml). Alternatively, you can load via the `Edit > Load Petstore OAS 2.0` menu option!_
+  version: 1.0.0
+tags:
+  - name: pipelines
+    description: Everything about pipelines
+    externalDocs:
+      description: Find out more
+      url: http://swagger.io
+  - name: jobs
+    description: Access to Petstore orders
+    externalDocs:
+      description: Find out more about our store
+      url: http://swagger.io
+paths:
+  /pipeline:
+    post:
+      tags:
+        - pipelines
+      summary: Create new pipeline
+      description: Create new pipeline
+      operationId: create_pipeline
+      requestBody:
+        description: Update an existent pet in the store
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Pipeline'
+        required: true
+      responses:
+        '200':
+          description: Successful creation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'      
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: Pet not found
+        '422':
+          description: Validation exception
+      security:
+        - petstore_auth:
+            - write:pets
+            - read:pets
+  
+  
+components:
+  schemas:
+    Pipeline:
+      type: object
+      required:
+        - pipeline_name
+        - stages
+      properties:
+        pipeline_name:
+          type: string
+          description: Name of pipeline
+          example: Authorization
+        stages:
+          type: array
+          description: Description of every stage in pipeline
+          items: 
+            properties:
+              number_in_pipeline: 
+                type: integer
+              stage: 
+                $ref: '#/components/schemas/Stage'
+          example: {1: stage1, 2: stage2}
+    Stage:
+      type: object
+      required:
+        - stage_type
+        - stage_params
+      properties:
+        stage_type:
+          type: string
+          description: Type of stage
+          enum:
+            - HTTP
+            - Database
+          example: HTTP
+        stage_params:
+          type: object
+          description: Parameters of stage
+          oneOf:
+            - $ref: '#/components/schemas/HTTPStage'
+            - $ref: '#/components/schemas/DatabaseStage'
+    HTTPStage:
+      type: object
+      required:
+        - url_path
+        - method
+      properties:
+        url_path:
+          type: string
+          description: URL-path to service
+          example: server.com/users
+        method:
+          type: string
+          description: HTTP-method of request
+          enum:
+            - POST
+            - GET
+          example: POST
+        path_params:
+          type: string
+        query_params:
+          type: string
+        input_data:
+          type: string
+        return_value:
+          type: string
+        return_codes:
+          type: array
+          description: Correct HTTP-responce codes to continue execute stages
+          items:
+            type: integer
+          example: [200, 201]
+    DatabaseStage:
+      type: object
+      properties:
+        request:
+          type: string
+          description: Request to databse
+          example: select * from db
+  requestBodies:
+    Pet:
+      description: Pet object that needs to be added to the store
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Pet'
+        application/xml:
+          schema:
+            $ref: '#/components/schemas/Pet'
+    UserArray:
+      description: List of user object
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/User'
+  securitySchemes:
+    petstore_auth:
+      type: oauth2
+      flows:
+        implicit:
+          authorizationUrl: https://petstore3.swagger.io/oauth/authorize
+          scopes:
+            write:pets: modify pets in your account
+            read:pets: read your pets
+    api_key:
+      type: apiKey
+      name: api_key
+      in: header
