@@ -8,14 +8,8 @@ info:
 tags:
   - name: pipelines
     description: Everything about pipelines
-    externalDocs:
-      description: Find out more
-      url: http://swagger.io
   - name: jobs
-    description: Access to Petstore orders
-    externalDocs:
-      description: Find out more about our store
-      url: http://swagger.io
+    description: Everything about jobs
 paths:
   /pipeline:
     post:
@@ -77,6 +71,32 @@ paths:
           description: Invalid input
         '422':
           description: Validation exception
+  /job/status/{job_id}:
+    get:
+      tags:
+        - jobs
+      summary: Status of runned job
+      description: Status of runned job
+      operationId: status_job_by_id
+      parameters:
+        - name: job_id
+          in: path
+          description: Id of runned job
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Status of job
+          content:
+            application/json:
+              schema:
+                type: object
+                oneOf:
+                  - $ref: '#/components/schemas/SuccessEndedJob'
+                  - $ref: '#/components/schemas/JobEndedWithError'
+        '400':
+          description: Invalid input
   
   
 components:
@@ -227,6 +247,20 @@ components:
           example: 
             data_key1: "data_value1"
             data_key2: "data_value2"
+    SuccessEndedJob:
+      type: string
+      example: Success ended
+    JobEndedWithError:
+      type: object
+      properties:
+        error_code:
+          type: integer
+          description: Error code
+          example: 409
+        error_message:
+          type: string
+          description: Error message
+          example: Can't insert into database via conflict name
   examples:
     FirstExampleStage:
       value:
@@ -236,22 +270,3 @@ components:
             input_data: ["login", "password"]
             return_value: user_id
             return_codes: [200]
-  requestBodies:
-    Pet:
-      description: Pet object that needs to be added to the store
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Pipeline'
-        application/xml:
-          schema:
-            $ref: '#/components/schemas/Pipeline'
-    UserArray:
-      description: List of user object
-      content:
-        application/json:
-          schema:
-            type: array
-            items:
-              $ref: '#/components/schemas/Pipeline'
-  
