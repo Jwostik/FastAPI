@@ -1,13 +1,9 @@
 openapi: 3.0.3
 info:
   title: Pipeline service
-  description: |-
-    This is a sample Pet Store Server based on the OpenAPI 3.0 specification.  You can find out more about
-    Swagger at [https://swagger.io](https://swagger.io). In the third iteration of the pet store, we've switched to the design first approach!
-    You can now help us improve the API whether it's by making changes to the definition itself or to the code.
-    That way, with time, we can improve the API in general, and expose some of the new features in OAS3.
+  description: 
+    This is a pipeline service that can create pipelines, start them and get status of runned job.
 
-    _If you're looking for the Swagger 2.0/OAS 2.0 version of Petstore, then click [here](https://editor.swagger.io/?url=https://petstore.swagger.io/v2/swagger.yaml). Alternatively, you can load via the `Edit > Load Petstore OAS 2.0` menu option!_
   version: 1.0.0
 tags:
   - name: pipelines
@@ -29,29 +25,58 @@ paths:
       description: Create new pipeline
       operationId: create_pipeline
       requestBody:
-        description: Update an existent pet in the store
+        description: Create new pipeline
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Stage'
+              $ref: '#/components/schemas/Pipeline'
         required: true
       responses:
         '200':
           description: Successful creation
+        '400':
+          description: Invalid input
+        '409':
+          description: Name of pipeline has already used
+        '422':
+          description: Validation exception
+  /job/start/{pipeline_name}:
+    post:
+      tags:
+        - jobs
+      summary: Start job with existing pipeline
+      description: Start job with existing pipeline
+      operationId: start_pipeline_by_name
+      parameters:
+        - name: pipeline_name
+          in: path
+          description: Name of pipeline that needs to be started
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: Start job with existing pipeline
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StartJobSchema'
+        required: true
+      responses:
+        '200':
+          description: Successful start pipeline
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Pipeline'      
+                type: object
+                properties:
+                  job_id:
+                    type: integer
+                    description: ID started job
+                    example: 10     
         '400':
-          description: Invalid ID supplied
-        '404':
-          description: Pet not found
+          description: Invalid input
         '422':
           description: Validation exception
-      security:
-        - petstore_auth:
-            - write:pets
-            - read:pets
   
   
 components:
@@ -68,10 +93,11 @@ components:
           example: Authorization
         stages:
           type: object
-          description: Description of every stage in pipeline
+          description: Description of every stage in pipeline with its order number as key
           additionalProperties: 
             $ref: '#/components/schemas/Stage'
-          example: {"1":
+          example: 
+            "1":
                 {
                     "stage_type": "HTTP",
                     "stage_params": 
@@ -79,10 +105,10 @@ components:
                             "url_path": "server.com/users",
                             "method": "POST",
                             "data": ["login", "password"],
-                            "return_value": ["user_id"],
-                            "return_codes": [200, 400]
+                            "return_values": ["user_id"],
+                            "return_codes": [200]
                         }
-                },
+                }
             "2":
                 {
                     "stage_type": "HTTP",
@@ -91,10 +117,10 @@ components:
                             "url_path": "server.com/auth",
                             "method": "POST",
                             "data": ["user_id"],
-                            "return_value": ["jwt"],
-                            "return_codes": [200, 400]
+                            "return_values": ["jwt"],
+                            "return_codes": [200]
                         }
-                }}
+                }
     Stage:
       type: object
       required:
@@ -133,46 +159,39 @@ components:
           example: POST
         path_params:
           type: array
+          description: Keys of path parameters needed in request
           items:
             type: string
           example:
-            {
-                "path_key1": "path_value1",
-                "path_key2": "path_value2"
-            }
+            ["path_key1", "path_key2"]
         query_params:
           type: array
+          description: Keys of query parameters needed in request
           items:
             type: string
           example:
-            {
-                "query_key1": "query_value1",
-                "query_key2": "query_value2"
-            }
+            ["query_key1", "query_key2"]
         input_data:
           type: array
+          description: Keys of input data needed in request
           items:
             type: string
           example:
-            {
-                "data_key1": "data_value1",
-                "data_key2": "data_value2"
-            }
-        return_value:
+            ["data_key1", "data_key2"]
+        return_values:
           type: array
+          description: Keys of return values of stage
           items:
             type: string
           example:
-            {
-                "return_value_key1": "return_value_value1",
-                "return_value_key2": "return_value_value2"
-            }
+            ["return_value_key1", "return_value_key2"]
         return_codes:
           type: array
           description: Correct HTTP-responce codes to continue execute stages
           items:
             type: integer
           example: [200, 201]
+    
     DatabaseStage:
       type: object
       properties:
@@ -180,6 +199,43 @@ components:
           type: string
           description: Request to databse
           example: select * from db
+    
+    StartJobSchema:
+      type: object
+      properties:
+        path_params:
+          type: object
+          additionalProperties:
+            type: string
+          description:  Key/value for path parameters
+          example: 
+            path_key1: "path_value1"
+            path_key2: "path_value2"
+        query_params:
+          type: object
+          additionalProperties:
+            type: string
+          description:  Key/value for query parameters
+          example: 
+            query_key1: "query_value1"
+            query_key2: "query_value2"
+        input_data:
+          type: object
+          additionalProperties:
+            type: string
+          description:  Key/value for input_data
+          example: 
+            data_key1: "data_value1"
+            data_key2: "data_value2"
+  examples:
+    FirstExampleStage:
+      value:
+        HTTPStage:
+          - url_path: server.com/users
+            method: POST
+            input_data: ["login", "password"]
+            return_value: user_id
+            return_codes: [200]
   requestBodies:
     Pet:
       description: Pet object that needs to be added to the store
@@ -198,16 +254,4 @@ components:
             type: array
             items:
               $ref: '#/components/schemas/Pipeline'
-  securitySchemes:
-    petstore_auth:
-      type: oauth2
-      flows:
-        implicit:
-          authorizationUrl: https://petstore3.swagger.io/oauth/authorize
-          scopes:
-            write:pets: modify pets in your account
-            read:pets: read your pets
-    api_key:
-      type: apiKey
-      name: api_key
-      in: header
+  
