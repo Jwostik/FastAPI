@@ -33,7 +33,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Pipeline'
+              $ref: '#/components/schemas/Stage'
         required: true
       responses:
         '200':
@@ -41,7 +41,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Pet'      
+                $ref: '#/components/schemas/Pipeline'      
         '400':
           description: Invalid ID supplied
         '404':
@@ -67,15 +67,34 @@ components:
           description: Name of pipeline
           example: Authorization
         stages:
-          type: array
+          type: object
           description: Description of every stage in pipeline
-          items: 
-            properties:
-              number_in_pipeline: 
-                type: integer
-              stage: 
-                $ref: '#/components/schemas/Stage'
-          example: {1: stage1, 2: stage2}
+          additionalProperties: 
+            $ref: '#/components/schemas/Stage'
+          example: {"1":
+                {
+                    "stage_type": "HTTP",
+                    "stage_params": 
+                        {
+                            "url_path": "server.com/users",
+                            "method": "POST",
+                            "data": ["login", "password"],
+                            "return_value": ["user_id"],
+                            "return_codes": [200, 400]
+                        }
+                },
+            "2":
+                {
+                    "stage_type": "HTTP",
+                    "stage_params": 
+                        {
+                            "url_path": "server.com/auth",
+                            "method": "POST",
+                            "data": ["user_id"],
+                            "return_value": ["jwt"],
+                            "return_codes": [200, 400]
+                        }
+                }}
     Stage:
       type: object
       required:
@@ -113,13 +132,41 @@ components:
             - GET
           example: POST
         path_params:
-          type: string
+          type: array
+          items:
+            type: string
+          example:
+            {
+                "path_key1": "path_value1",
+                "path_key2": "path_value2"
+            }
         query_params:
-          type: string
+          type: array
+          items:
+            type: string
+          example:
+            {
+                "query_key1": "query_value1",
+                "query_key2": "query_value2"
+            }
         input_data:
-          type: string
+          type: array
+          items:
+            type: string
+          example:
+            {
+                "data_key1": "data_value1",
+                "data_key2": "data_value2"
+            }
         return_value:
-          type: string
+          type: array
+          items:
+            type: string
+          example:
+            {
+                "return_value_key1": "return_value_value1",
+                "return_value_key2": "return_value_value2"
+            }
         return_codes:
           type: array
           description: Correct HTTP-responce codes to continue execute stages
@@ -139,10 +186,10 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Pet'
+            $ref: '#/components/schemas/Pipeline'
         application/xml:
           schema:
-            $ref: '#/components/schemas/Pet'
+            $ref: '#/components/schemas/Pipeline'
     UserArray:
       description: List of user object
       content:
@@ -150,7 +197,7 @@ components:
           schema:
             type: array
             items:
-              $ref: '#/components/schemas/User'
+              $ref: '#/components/schemas/Pipeline'
   securitySchemes:
     petstore_auth:
       type: oauth2
