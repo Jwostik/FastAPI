@@ -77,7 +77,6 @@ sequenceDiagram
     Note over S: Execute stages
     S->>D: update stage and data in job_id
     S->>D: if all stages have done set status=ended successfully<br/>else set status=ended with error
-    S->>C: Successfully completed<br/> or ended with error on stage_i
 ```
 
 Выполнение стадий происходит в отдельных потоках.
