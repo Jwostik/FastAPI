@@ -75,10 +75,12 @@ sequenceDiagram
     D->>S: Start job_id or Error
     S->>C: Start job_id or Error on start
     Note over S: Execute stages
-    S->>D: update stage in job_id
+    S->>D: update stage and data in job_id
     S->>D: if all stages have done set status=ended successfully<br/>else set status=ended with error
     S->>C: Successfully completed<br/> or ended with error on stage_i
 ```
+
+Выполнение стадий происходит в отдельных потоках.
 
 Чтобы узнать текущую стадию job отправляется HTTP GET-запрос на server.com/status_job?job_id=<идентификатор>.
 
@@ -118,6 +120,7 @@ erDiagram
         int stage_id FK "references stages(stage_id)"
         text job_status "in process/ended succesfully/ended with error"
         text job_error "code of error with description or null"
+        json data "data that send to current stage"
     }
 
     PIPELINES ||--|{ STAGES : first_stage
