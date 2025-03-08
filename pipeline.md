@@ -76,7 +76,6 @@ sequenceDiagram
     S->>C: Start job_id or Error on start
     Note over S: Execute stages
     S->>D: update stage and data in job_id
-    S->>D: if all stages have done set status=ended successfully<br/>else set status=ended with error
 ```
 
 Выполнение стадий происходит в отдельных потоках.
