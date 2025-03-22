@@ -61,12 +61,9 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  job_id:
-                    type: integer
-                    description: ID started job
-                    example: 10     
+                type: integer
+                description: ID started job
+                example: 10     
         '400':
           description: Invalid input
         '422':
