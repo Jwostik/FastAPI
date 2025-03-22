@@ -34,9 +34,7 @@ sequenceDiagram
 | --- | --- | --- |
 | url_path | T | URL-адрес вызываемого сервиса |
 | method | T | Метод отправки HTTP-запроса: POST, GET и т.д. |
-| path_params | F | Хеш-таблица ключей параметров пути с jq фильтрами для их извлечения из входящих данных стадии |
-| query_params | F | Хеш-таблица ключей query-параметров с jq фильтрами для их извлечения из входящих данных стадии |
-| data | F | Хеш-таблица ключей данных, необходимых в запросе, с jq фильтрами для их извлечения из входящих данных стадии |
+| input_data | F | Хеш-таблица ключей параметров пути, query-параметров, данных, необходимых в запросе, с jq фильтрами для их извлечения из входящих данных стадии |
 | return_value | F | Хеш-таблица имен возвращаемых значений с jq фильтрами для их трансформации в данные следующей стадии |
 | return_codes | F | Массив возможных кодов возврата, при которых выполнение job продолжается |
 
@@ -45,12 +43,12 @@ sequenceDiagram
 Для запуска pipeline отправляется HTTP POST-запрос на server.com/job/{pipeline_name}, где pipeline_name - имя запускаемого pipeline, с данными, необходимыми для работы сервиса, в формате json. Для HTTP pipeline это могут быть значения параметров пути, query-параметров или просто данными запроса, т.е. json следующего формата:
 ```json
 {
-    "path_key1": "path_value1",
-    "path_key2": "path_value2"
-    "query_key1": "query_value1",
-    "query_key2": "query_value2"
-    "data_key1": "data_value1",
-    "data_key2": "data_value2"
+    "path_key1": ".path_value1",
+    "path_key2": ".path_value2"
+    "query_key1": ".query_value1",
+    "query_key2": ".query_value2"
+    "data_key1": ".data_value1",
+    "data_key2": ".data_value2"
 }
 ```
 
@@ -152,10 +150,9 @@ erDiagram
                         {
                             "url_path": "server.com/users",
                             "method": "POST",
-                            "data": ["login", "password"],
-                            "return_value": "user_id",
-                            "return_codes": [200, 400],
-                            "transfer_return_value_to_next_stage": true
+                            "data": {"login" : ".login", "password": ".password"},
+                            "return_value": {"user_id": ".user_id"},
+                            "return_codes": [200]
                         }
                 },
             "2":
@@ -165,9 +162,9 @@ erDiagram
                         {
                             "url_path": "server.com/auth",
                             "method": "POST",
-                            "data": ["user_id"],
-                            "return_value": "jwt",
-                            "return_codes": [200, 400]
+                            "data": {"user_id": ".user_id"},
+                            "return_value": {"jwt": ".jwt"},
+                            "return_codes": [200]
                         }
                 }
         }
