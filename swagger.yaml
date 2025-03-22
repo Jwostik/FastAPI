@@ -111,6 +111,7 @@ components:
       properties:
         pipeline_name:
           type: string
+          maxLength: 50
           description: Name of pipeline
           example: Authorization
         stages:
@@ -119,30 +120,28 @@ components:
           additionalProperties: 
             $ref: '#/components/schemas/Stage'
           example: 
-            "1":
-                {
-                    "stage_type": "HTTP",
-                    "stage_params": 
-                        {
-                            "url_path": "server.com/users",
-                            "method": "POST",
-                            "data": ["login", "password"],
-                            "return_values": ["user_id"],
-                            "return_codes": [200]
-                        }
-                }
-            "2":
-                {
-                    "stage_type": "HTTP",
-                    "stage_params": 
-                        {
-                            "url_path": "server.com/auth",
-                            "method": "POST",
-                            "data": ["user_id"],
-                            "return_values": ["jwt"],
-                            "return_codes": [200]
-                        }
-                }
+            1:
+              stage_type: HTTP
+              stage_params:
+                url_path: server.com/users
+                method: POST
+                input_data: 
+                  "login": ".login"
+                  "password": ".password"
+                return_value: 
+                  "user_id": ".user_id"
+                return_codes: [200]
+            2:
+              stage_type: HTTP
+              stage_params:
+                url_path: server.com/auth
+                method: POST
+                input_data: 
+                  "user_id": ".user_id"
+                return_value: 
+                  "jwt": ".jwt"
+                return_codes: [200]  
+            
     Stage:
       type: object
       required:
@@ -151,6 +150,7 @@ components:
       properties:
         stage_type:
           type: string
+          maxLength: 50
           description: Type of stage
           enum:
             - HTTP
@@ -167,9 +167,11 @@ components:
       required:
         - url_path
         - method
+        - return_codes
       properties:
         url_path:
           type: string
+          maxLength: 50
           description: URL-path to service
           example: server.com/users
         method:
@@ -179,34 +181,28 @@ components:
             - POST
             - GET
           example: POST
-        path_params:
-          type: array
-          description: Keys of path parameters needed in request
-          items:
-            type: string
-          example:
-            ["path_key1", "path_key2"]
-        query_params:
-          type: array
-          description: Keys of query parameters needed in request
-          items:
-            type: string
-          example:
-            ["query_key1", "query_key2"]
         input_data:
-          type: array
-          description: Keys of input data needed in request
-          items:
+          type: object
+          description: HashMap of keys of input data that consist of path and query parameters and data needed in request with jq filters needed to convert them from incoming data 
+          additionalProperties:
             type: string
+            maxLength: 50
           example:
-            ["data_key1", "data_key2"]
+            "path_key1": ".path_filter1"
+            "path_key2": ".path_filter2"
+            "query_key1": ".query_filter1"
+            "query_key2": ".query_filter2"
+            "data_key1": ".data_filter1"
+            "data_key2": ".data_filter2"
         return_values:
-          type: array
-          description: Keys of return values of stage
-          items:
+          type: object
+          description: HashMap of keys of return values of stage with jq filters needed to transform them to data sended to next stage
+          additionalProperties:
             type: string
+            maxLength: 50
           example:
-            ["return_value_key1", "return_value_key2"]
+            "return_value_key1": ".return_filter1"
+            "return_value_key2": ".return_filter2"
         return_codes:
           type: array
           description: Correct HTTP-responce codes to continue execute stages
@@ -219,36 +215,22 @@ components:
       properties:
         request:
           type: string
+          maxLength: 50
           description: Request to databse
           example: select * from db
-    
     StartJobSchema:
       type: object
-      properties:
-        path_params:
-          type: object
-          additionalProperties:
-            type: string
-          description:  Key/value for path parameters
-          example: 
-            path_key1: "path_value1"
-            path_key2: "path_value2"
-        query_params:
-          type: object
-          additionalProperties:
-            type: string
-          description:  Key/value for query parameters
-          example: 
-            query_key1: "query_value1"
-            query_key2: "query_value2"
-        input_data:
-          type: object
-          additionalProperties:
-            type: string
-          description:  Key/value for input_data
-          example: 
-            data_key1: "data_value1"
-            data_key2: "data_value2"
+      additionalProperties:
+        type: string
+        maxLength: 50
+      description:  Key/value for input data
+      example: 
+        path_key1: "path_value1"
+        path_key2: "path_value2"
+        query_key1: "query_value1"
+        query_key2: "query_value2"
+        data_key1: "data_value1"
+        data_key2: "data_value2"
     SuccessEndedJob:
       type: string
       example: Success ended
@@ -267,12 +249,3 @@ components:
           type: string
           description: Error message
           example: Can't insert into database via conflict name
-  examples:
-    FirstExampleStage:
-      value:
-        HTTPStage:
-          - url_path: server.com/users
-            method: POST
-            input_data: ["login", "password"]
-            return_value: user_id
-            return_codes: [200]
