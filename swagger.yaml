@@ -34,7 +34,7 @@ paths:
           description: Name of pipeline has already used
         '422':
           description: Validation exception
-  /job/start/{pipeline_name}:
+  /job/{pipeline_name}:
     post:
       tags:
         - jobs
@@ -42,12 +42,12 @@ paths:
       description: Start job with existing pipeline
       operationId: start_pipeline_by_name
       parameters:
-        - name: pipeline_name
-          in: path
-          description: Name of pipeline that needs to be started
-          required: true
-          schema:
-            type: string
+          - name: pipeline_name
+            in: path
+            description: Name of pipeline that needs to be started
+            required: true
+            schema:
+              type: string
       requestBody:
         description: Start job with existing pipeline
         content:
@@ -71,7 +71,7 @@ paths:
           description: Invalid input
         '422':
           description: Validation exception
-  /job/status/{job_id}:
+  /job:
     get:
       tags:
         - jobs
@@ -80,7 +80,7 @@ paths:
       operationId: status_job_by_id
       parameters:
         - name: job_id
-          in: path
+          in: query
           description: Id of runned job
           required: true
           schema:
@@ -95,6 +95,8 @@ paths:
                 oneOf:
                   - $ref: '#/components/schemas/SuccessEndedJob'
                   - $ref: '#/components/schemas/JobEndedWithError'
+                  - $ref: '#/components/schemas/JobInProcess'
+                  
         '400':
           description: Invalid input
   
@@ -250,6 +252,10 @@ components:
     SuccessEndedJob:
       type: string
       example: Success ended
+    JobInProcess:
+      type: string
+      description: Message about processing job with id of current executing stage
+      example: Job in process on stage 2
     JobEndedWithError:
       type: object
       properties:
