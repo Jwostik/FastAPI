@@ -1,4 +1,4 @@
-Для создания pipeline отправляется HTTP POST-запрос на server.com/create_pipeline с данными в формате json следующего вида:
+Для создания pipeline отправляется HTTP POST-запрос на server.com/pipeline с данными в формате json следующего вида:
 ```json
 {
     "pipeline_name": <имя pipeline>,
@@ -20,7 +20,7 @@ sequenceDiagram
     participant C as Client
     participant S as Service
     participant D as Database
-    C->>S: POST server_com/create_pipeline
+    C->>S: POST server_com/pipeline
     S->>D: insert pipeline
     S->>D: insert stage_1
     S->>D: ...
@@ -34,43 +34,34 @@ sequenceDiagram
 | --- | --- | --- |
 | url_path | T | URL-адрес вызываемого сервиса |
 | method | T | Метод отправки HTTP-запроса: POST, GET и т.д. |
-| path_params | F | Параметры пути |
-| query_params | F | Массив ключей query-параметров |
-| data | F | Массив ключей данных, необходимых в запросе|
-| return_value | F | Имя возвращаемого значения |
-| transfer_return_value_to_next_stage | F | True/False - отправляется ли возвращемое значение как входной аргумент следующей стадии сервиса |
-| transfer_data_to_next_stage | F | True/False - отправляются ли исходные данные запроса как входной аргумент следующей стадии сервиса |
-| return_codes | F | Массив возможных кодов возврата|
+| path_params | F | Хеш-таблица ключей параметров пути с jq фильтрами для их извлечения из входящих данных стадии |
+| query_params | F | Хеш-таблица ключей query-параметров с jq фильтрами для их извлечения из входящих данных стадии |
+| data | F | Хеш-таблица ключей данных, необходимых в запросе, с jq фильтрами для их извлечения из входящих данных стадии |
+| return_value | F | Хеш-таблица имен возвращаемых значений с jq фильтрами для их трансформации в данные следующей стадии |
+| return_codes | F | Массив возможных кодов возврата, при которых выполнение job продолжается |
 
 По итогам создания pipeline сервер возвращает сообщение об успешном создании pipeline или ошибку, возникшую при его создании.
 
-Для запуска pipeline отправляется HTTP POST-запрос на server.com/start_pipeline с заголовком вида "name: <имя pipeline>" и данными, необходимыми для работы сервиса, в формате json. Для HTTP pipeline это могут быть значения параметров пути, query-параметров или просто данными запроса, т.е. json следующего формата:
+Для запуска pipeline отправляется HTTP POST-запрос на server.com/job/{pipeline_name}, где pipeline_name - имя запускаемого pipeline, с данными, необходимыми для работы сервиса, в формате json. Для HTTP pipeline это могут быть значения параметров пути, query-параметров или просто данными запроса, т.е. json следующего формата:
 ```json
-"path_params":
-    {
-        "path_key1": "path_value1",
-        "path_key2": "path_value2"
-    },
-"quety_params":
-    {
-        "query_key1": "query_value1",
-        "query_key2": "query_value2"
-    },
-"data":
-    {
-        "data_key1": "data_value1",
-        "data_key2": "data_value2"
-    }
+{
+    "path_key1": "path_value1",
+    "path_key2": "path_value2"
+    "query_key1": "query_value1",
+    "query_key2": "query_value2"
+    "data_key1": "data_value1",
+    "data_key2": "data_value2"
+}
 ```
 
-Сервер возвращает идентификатор начавшейся job. По итогам успешного выполнения всех стадий сервер сообщает об успешном выполнении job, в противном случае - сообщает о возникновении ошибки на конкретной стадии.
+Сервер возвращает идентификатор начавшейся job или ошибку, возникшую при запуске.
 
 ```mermaid
 sequenceDiagram
     participant C as Client
     participant S as Service
     participant D as Database
-    C->>S: POST server_com/start_pipeline "name: pipeline"
+    C->>S: POST server_com/pipeline/pipeline_name
     S->>D: insert job_status with stage=1 and status=in process
     D->>S: Start job_id or Error
     S->>C: Start job_id or Error on start
@@ -78,16 +69,31 @@ sequenceDiagram
     S->>D: update stage and data in job_id
 ```
 
-Выполнение стадий происходит в отдельных потоках.
+Работа каждой job происходит по паттерну Producer/Consumer: при запуске задачи создается запись в очереди о необходимости запуска конкретной задачи со стадии 1, каждый Consumer при освобождении от выполнения (или по истечению таймаута, равного по умолчанию 5 мс, если при освобождении очередь оказалась пустой) забирает очередную задачу, помечает ее в базе данных как начавшуюся, и начинает ее выполнение. При успешном выполнении стадии Consumer записывает в очередь необходимость запуска следующей стадии (при условии, что она не была последней), обновляет соответствующие значения для работы в базе данных (номер текущей стадии, флаг запуска стадии и т.д.). При возникновении ошибки при выполнении стадии Consumer также пишет необходимую информацию в базе данных, но ничего нового в очередь уже не помещает. В обоих случаях после выполнения описанных пунктов освобождается. По умолчанию количество Consumer равно 5.
 
-Чтобы узнать текущую стадию job отправляется HTTP GET-запрос на server.com/status_job?job_id=<идентификатор>.
+```mermaid
+sequenceDiagram
+    participant S as Service
+    participant Q as Queue
+    participant C as Consumer
+    participant D as Database
+    S->>Q: insert job 1 with stage 1
+    C->>Q: take stage
+    Note over C: Execute stage
+    C->>D: update job params
+    C->>Q: insert job 1 with stage 2
+    Note over S: Execute stages
+    C->>Q: take stage
+```
+
+Чтобы узнать текущую стадию job отправляется HTTP GET-запрос на server.com/job?job_id=<идентификатор>.
 
 ```mermaid
 sequenceDiagram
     participant C as Client
     participant S as Service
     participant D as Database
-    C->>S: GET server_com/status_job?job_id=<идентификатор>
+    C->>S: GET server_com/job?job_id=<идентификатор>
     S->>D: get stage_index_in_pipeline where job_id=<идентификатор>
     D->>S: stage_index_in_pipeline
     S->>C: stage_index_in_pipeline
@@ -119,6 +125,7 @@ erDiagram
         text job_status "in process/ended succesfully/ended with error"
         text job_error "code of error with description or null"
         json data "data that send to current stage"
+        boolean started "flag signalized that stage is started"
     }
 
     PIPELINES ||--|{ STAGES : first_stage
@@ -129,7 +136,7 @@ erDiagram
 ```
 В качестве примера работы с данным сервисом приведем пример pipeline, позволяющий создать пользователя в базе данных, а затем получнием jwt для дальнейшей авторизации:
 
-Сначала создадим описанный pipeline. Для этого отправляем HTTP POST-запрос на server.com/create_pipeline с данными:
+Сначала создадим описанный pipeline. Для этого отправляем HTTP POST-запрос на server.com/pipeline с данными:
 ```json
 {
     "pipeline_name": "Authorization",
