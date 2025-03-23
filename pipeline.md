@@ -34,7 +34,9 @@ sequenceDiagram
 | --- | --- | --- |
 | url_path | T | URL-адрес вызываемого сервиса |
 | method | T | Метод отправки HTTP-запроса: POST, GET и т.д. |
-| input_data | F | Хеш-таблица ключей параметров пути, query-параметров, данных, необходимых в запросе, с jq фильтрами для их извлечения из входящих данных стадии |
+| path_params | F | |
+| query_params | F | |
+| body | F | jq фильтрами для их извлечения из входящих данных стадии |
 | return_value | F | Хеш-таблица имен возвращаемых значений с jq фильтрами для их трансформации в данные следующей стадии |
 | return_codes | F | Массив возможных кодов возврата, при которых выполнение job продолжается |
 
@@ -148,9 +150,11 @@ erDiagram
                     "stage_type": "HTTP",
                     "stage_params": 
                         {
-                            "url_path": "server.com/users",
+                            "url_path": "server.com/users/${path1}",
                             "method": "POST",
-                            "data": {"login" : ".login", "password": ".password"},
+                            "body": "{\"login\" : \".login\", \"password\": \".password\"}",
+                            "query_params": {"param1": ".query1"},
+                            "path_params": {"path1": ".p1"},
                             "return_value": {"user_id": ".user_id"},
                             "return_codes": [200]
                         }
