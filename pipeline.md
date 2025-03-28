@@ -125,7 +125,7 @@ erDiagram
         int job_status_id PK
         int pipeline_id FK "references pipelines(pipeline_id)"
         int stage_id FK "references stages(stage_id)"
-        text job_status "in process/ended succesfully/ended with error"
+        text job_status "running/waiting/success/error"
         text job_error "code of error with description or null"
         json data "data that send to current stage"
         boolean started "flag signalized that stage is started"
